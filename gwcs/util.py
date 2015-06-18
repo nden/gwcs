@@ -48,11 +48,11 @@ class RegionError(Exception):
         super(RegionError, self).__init__()
 
 
-class CoordinateFrameError(Exception):
+class CoordinateAxesError(Exception):
 
     def __init__(self, message):
         self.message = message
-        super(CoordinateFrameError, self).__init__()
+        super(CoordinateAxesError, self).__init__()
 
 
 def get_projcode(ctype):
