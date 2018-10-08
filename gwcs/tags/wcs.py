@@ -1,7 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 # -*- coding: utf-8 -*-
 import astropy.time
-import six
 
 from asdf import yamlutil
 from ..gwcs_types import GWCSType
@@ -27,12 +26,9 @@ class WCSType(GWCSType):
     def from_tree(cls, node, ctx):
         import importlib
         steps = [(x['frame'], x.get('transform')) for x in node['steps']]
-        #name = node['name']
         name = node.pop('name')
-        #node.pop(steps)
         mod = importlib.import_module(node['module'])
         klass = getattr(mod, node['cls'])
-        #return WCS(steps, name=name)
         return klass(steps, name=name, **node)
 
     @classmethod

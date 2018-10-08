@@ -148,6 +148,6 @@ def test_subclass_wcs(tmpdir):
                 if sporder not in (1,2,-1):
                     raise ValueError("Sporder not valid.")
 
-    wcsobj = MyWCS(pipe, additional_inputs=["sporder", "slitname"]
+    wcsobj = MyWCS(pipe, additional_inputs=["sporder", "slitname"])
     tree = {'wcs': wcsobj}
     helpers.assert_roundtrip_tree(tree, tmpdir)
