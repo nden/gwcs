@@ -29,8 +29,8 @@ class WCSType(GWCSType):
         steps = [(x['frame'], x.get('transform')) for x in node['steps']]
         #name = node['name']
         name = node.pop('name')
-        #node.pop(steps)
-        mod = importlib.importmodule(node['module'])
+        node.pop(steps)
+        mod = importlib.import_module(node['module'])
         klass = getattr(mod, node['cls'])
         #return WCS(steps, name=name)
         return klass(steps, name=name, **node)
