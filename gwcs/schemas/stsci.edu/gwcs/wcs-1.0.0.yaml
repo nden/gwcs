@@ -28,6 +28,9 @@ properties:
     type: array
     items:
       $ref: step-1.0.0
-
+  module:
+    type: string
+  cls:
+    type: string
 required: [name, steps]
 additionalProperties: true

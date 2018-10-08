@@ -59,7 +59,14 @@ class GWCSType(CustomType):
     organization = 'stsci.edu'
     standard = 'gwcs'
 
+    def __init__(self, *args):
+        super().__init__(*args)
 
+    def _register(self, instance):
+        klass = instance.__class__
+        if klass not in _gwcs_types:
+            _gwcs_types.add(klass)
+        
 @six.add_metaclass(GWCSTransformTypeMeta)
 class GWCSTransformType(TransformType):
     """
