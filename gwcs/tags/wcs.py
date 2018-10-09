@@ -21,14 +21,15 @@ class WCSType(GWCSType):
     requires = _REQUIRES
     types = [WCS]
     version = '1.0.0'
+    handle_dynamic_subclasses = True
 
     @classmethod
     def from_tree(cls, node, ctx):
         import importlib
-        steps = [(x['frame'], x.get('transform')) for x in node['steps']]
+        steps = [(x['frame'], x.get('transform')) for x in node.pop('steps')]
         name = node.pop('name')
-        mod = importlib.import_module(node['module'])
-        klass = getattr(mod, node['cls'])
+        mod = importlib.import_module(node.pop('module'))
+        klass = getattr(mod, node.pop('cls'))
         return klass(steps, name=name, **node)
 
     @classmethod
@@ -50,11 +51,13 @@ class WCSType(GWCSType):
         frame = get_frame(frame_name)
         steps.append(StepType({'frame': frame}))
 
-        return {'name': gwcsobj.name,
+        node = {'name': gwcsobj.name,
                 'module': gwcsobj.__module__,
                 'cls': gwcsobj.__class__.__name__,
                 'steps': yamlutil.custom_tree_to_tagged_tree(steps, ctx)
         }
+
+        return node
 
     @classmethod
     def assert_equal(cls, old, new):

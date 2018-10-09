@@ -66,7 +66,8 @@ class GWCSType(CustomType):
         klass = instance.__class__
         if klass not in _gwcs_types:
             _gwcs_types.add(klass)
-        
+
+
 @six.add_metaclass(GWCSTransformTypeMeta)
 class GWCSTransformType(TransformType):
     """

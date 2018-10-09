@@ -127,6 +127,18 @@ def test_frames(tmpdir):
 
     helpers.assert_roundtrip_tree(tree, tmpdir)
 
+class MyWCS(wcs.WCS):
+    def __init__(self, pipeline, name="", additional_inputs=[]):
+        super().__init__(pipeline, name=name)
+        self.additional_inputs = additional_inputs
+
+    def validate_inputs(self, sporder=None, slitname=None):
+        if slitname is not None:
+            if slitname not in (1, 2, "S12"):
+                raise ValueError("Slitname not valid.")
+        if sporder is not None:
+            if sporder not in (1,2,-1):
+                raise ValueError("Sporder not valid.")
 
 def test_subclass_wcs(tmpdir):
     m1 = models.Shift(12.4) & models.Shift(-2)
@@ -134,19 +146,6 @@ def test_subclass_wcs(tmpdir):
     det = cf.Frame2D(name='detector', axes_order=(0, 1))
 
     pipe = [(det, m1), (icrs, None)]
-    
-    class MyWCS(wcs.WCS):
-        def __init__(self, pipeline, additional_inputs):
-            super().__init__(pipeline)
-            self.additional_inputs = additional_inputs
-
-        def validate_inputs(self, sporder=None, slitname=None):
-            if slitname is not None:
-                if slitname not in (1, 2, "S12"):
-                    raise ValueError("Slitname not valid.")
-            if sporder is not None:
-                if sporder not in (1,2,-1):
-                    raise ValueError("Sporder not valid.")
 
     wcsobj = MyWCS(pipe, additional_inputs=["sporder", "slitname"])
     tree = {'wcs': wcsobj}
