@@ -1,19 +1,21 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 # -*- coding: utf-8 -*-
 import astropy.time
+from astropy.io import fits
 
 from asdf import yamlutil
 from ..gwcs_types import GWCSType
 from ..coordinate_frames import (Frame2D, CoordinateFrame, CelestialFrame,
                                  SpectralFrame, TemporalFrame, CompositeFrame)
 from ..wcs import WCS
+from ..fitsutil import FITSDetector2World, FITSWorld2Detector
 
 
 _REQUIRES = ['astropy']
 
 
 __all__ = ["WCSType", "CelestialFrameType", "CompositeFrameType", "FrameType",
-           "SpectralFrameType", "StepType", "TemporalFrameType"]
+           "SpectralFrameType", "StepType", "TemporalFrameType", "FITSWCSType"]
 
 
 class WCSType(GWCSType):
@@ -285,3 +287,28 @@ class TemporalFrameType(GWCSType):
 
         return TemporalFrame(axes_order, reference_time,
                              reference_frame, unit, axes_names, name)
+
+from astropy import wcs as astwcs
+
+class FITSWCS(astwcs.WCS):
+
+    def __init__(self, *rags, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+class FITSWCSType(GWCSType):
+    name = "fitswcs"
+    requires = _REQUIRES
+    #types = [astwcs.WCS]
+    types = [FITSDetector2World]
+    version = '1.0.0'
+
+    @classmethod
+    def from_tree(cls, node, ctx):
+        #return astwcs.WCS(node['hdr'])
+        hdr = fits.Header.fromstring(node['hdr'])
+        return FITSDetector2World(hdr)
+
+    @classmethod
+    def to_tree(cls, fitswcs, ctx):
+        hdr = fitswcs.fitswcsobj.to_header_string()
+        return {'hdr': hdr}
