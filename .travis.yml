@@ -35,13 +35,25 @@ env:
         - PYTHON_VERSION=3.6 SETUP_CMD='test'
         - PYTHON_VERSION=3.7 SETUP_CMD='test'
 
+if: TRAVIS_EVENT_TYPE=cron
+
+matrix:
+        - python: 3.6
+          env: NUMPY_VERSION=dev SETUP_CMD='test'
+
+        - python: 3.6
+          env: ASTROPY_VERSION=development SETUP_CMD='test'
+
+        - python: 3.6
+          env: PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT" SETUP_CMD='test'
+
 matrix:
 
     # Don't wait for allowed failures
     fast_finish: true
-    
+
     include:
- 
+
         # Do a coverage test.
         - python: 3.5
           env: SETUP_CMD='test --coverage --open-files --remote-data'
