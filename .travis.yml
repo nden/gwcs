@@ -20,7 +20,7 @@ env:
         - PYTHON_VERSION=3.6
         - NUMPY_VERSION=stable
         #- ASTROPY_VERSION=development
-        - MAIN_CMD='python setup.py'
+        #- MAIN_CMD='python setup.py'
         - CONDA_DEPENDENCIES='scipy'
         - ASDF_GIT='git+https://github.com/spacetelescope/asdf.git#egg=asdf'
         #- ASTROPY_GIT='git+https://github.com/astropy/astropy.git@v3.1.x'
@@ -30,7 +30,8 @@ env:
 
     matrix:
         - SETUP_CMD='egg_info'
-        - SETUP_CMD='test'
+        #- SETUP_CMD='test'
+        - TEST_CMD = pytest
         - PYTHON_VERSION=3.6 SETUP_CMD='test'
         - PYTHON_VERSION=3.7 SETUP_CMD='test'
 
@@ -43,14 +44,14 @@ matrix:
 
         # Do a coverage test.
         - python: 3.5
-          env: SETUP_CMD='test --coverage --open-files --remote-data'
+          env: TEST_CMD='python setup.py test --coverage --open-files --remote-data'
 
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
         - python: 3.6
 
           env: PIP_DEPENDENCIES='.[docs]'
-               SETUP_CMD='build_docs -w'
+               TEST_CMD='python setup.py build_docs -w'
 
         - python: 3.6
           env: NUMPY_VERSION=1.16 SETUP_CMD="test"
@@ -63,33 +64,32 @@ matrix:
 
         # Do a PEP8 test with flake8
         - python: 3.6
-          env: MAIN_CMD='flake8 count --select=F, E101, E111, E112, E113, E401, E402, E711, E722, E30 --max-line-length=110'
-               SETUP_CMD='gwcs"
+          env: TEST_CMD='flake8 count --select=F, E101, E111, E112, E113, E401, E402, E711, E722, E30 --max-line-length=110 gwcs'
 
         - python: 3.5
-          env: MAIN_CMD='flake8 count --max-line-length=110' SETUP_CMD='gwcs'
+          env: TEST_CMD='flake8 count --max-line-length=110 gwcs'
 
         - python: 3.6
-          env: NUMPY_VERSION=dev SETUP_CMD='test'
+          env: NUMPY_VERSION=dev
 
         - python: 3.6
-          env: ASTROPY_VERSION=development SETUP_CMD='test'
+          env: ASTROPY_VERSION=development
 
         - python: 3.6
-          env: ASTROPY_VERSION=development PIP_DEPENDENCIES="$ASDF_GIT" SETUP_CMD='test'
+          env: ASTROPY_VERSION=development PIP_DEPENDENCIES="$ASDF_GIT"
 
     allow_failures:
         - python: 3.5
-          env: MAIN_CMD='flake8 count --max-line-length=110' SETUP_CMD='gwcs'
+          env: TEST_CMD='flake8 count --max-line-length=110 gwcs'
 
         - python: 3.6
-          env: NUMPY_VERSION=dev SETUP_CMD='test'
+          env: NUMPY_VERSION=dev
 
         - python: 3.6
-          env: ASTROPY_VERSION=development SETUP_CMD='test'
+          env: ASTROPY_VERSION=development
 
         - python: 3.6
-          env: ASTROPY_VERSION=development PIP_DEPENDENCIES="$ASDF_GIT" SETUP_CMD='test'
+          env: ASTROPY_VERSION=development PIP_DEPENDENCIES="$ASDF_GIT"
 
 
 install:
@@ -98,12 +98,12 @@ install:
     - pip install .
 
 script:
-    - $MAIN_CMD $SETUP_CMD
+    - $TEST_CMD
 
 after_success:
     # If coveralls.io is set up for this package, uncomment the line
     # below and replace "packagename" with the name of your package.
     # The coveragerc file may be customized as needed for your package.
-    - if [[ $SETUP_CMD == *--coverage* ]]; then
+    - if [[ $TEST_CMD == *--coverage* ]]; then
           coveralls --rcfile='gwcs/tests/coveragerc';
       fi
