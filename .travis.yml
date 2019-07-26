@@ -29,11 +29,11 @@ env:
         - PYTEST_VERSION=3.6
 
     matrix:
-        - SETUP_CMD='egg_info'
+        #- SETUP_CMD='egg_info'
         #- SETUP_CMD='test'
-        - TEST_CMD = pytest
-        - PYTHON_VERSION=3.6 SETUP_CMD='test'
-        - PYTHON_VERSION=3.7 SETUP_CMD='test'
+        - TEST_CMD = 'pytest'
+        - PYTHON_VERSION=3.6
+        - PYTHON_VERSION=3.7
 
 matrix:
 
@@ -54,13 +54,12 @@ matrix:
                TEST_CMD='python setup.py build_docs -w'
 
         - python: 3.6
-          env: NUMPY_VERSION=1.16 SETUP_CMD="test"
-
+          env: NUMPY_VERSION=1.16
         - python: 3.7
-          env: NUMPY_VERSION=1.16 SETUP_CMD="test"
+          env: NUMPY_VERSION=1.16
 
         - python: 3.5
-          env: NUMPY_VERSION=1.15 SETUP_CMD="test"
+          env: NUMPY_VERSION=1.15
 
         # Do a PEP8 test with flake8
         - python: 3.6
