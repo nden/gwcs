@@ -27,6 +27,7 @@ env:
         - PIP_DEPENDENCIES="astropy pytest-astropy asdf coverage"
         - ASTROPY_USE_SYSTEM_PYTEST=1
         - PYTEST_VERSION=3.6
+        - TEST_CMD = 'pytest'
 
     matrix:
         #- SETUP_CMD='egg_info'
