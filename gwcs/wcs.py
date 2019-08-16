@@ -35,8 +35,8 @@ class WCS(GWCSAPIMixin):
 
     """
 
-    def __init__(self, forward_transform=None, input_frame='detector', output_frame=None,
-                 name=""):
+    def __init__(self, forward_transform=None, input_frame='detector',
+                 output_frame=None, name="", inputs=()):
         #self.low_level_wcs = self
         self._available_frames = []
         self._pipeline = []
@@ -44,6 +44,13 @@ class WCS(GWCSAPIMixin):
         self._array_shape = None
         self._initialize_wcs(forward_transform, input_frame, output_frame)
         self._pixel_shape = None
+        tr_inputs = len(self.forward_transform.inputs)
+        #if len(inputs) != tr_inputs:
+            #raise ValueError("The number of inputs {} does not match the "
+                             #"number of inputs of the forward "
+                             #"transforms {}".format(len(inputs), tr_inputs))
+        self.inputs = inputs
+        self._compound_bbox = None
 
     def _initialize_wcs(self, forward_transform, input_frame, output_frame):
         if forward_transform is not None:
@@ -238,6 +245,12 @@ class WCS(GWCSAPIMixin):
         if transform is None:
             raise NotImplementedError("WCS.forward_transform is not implemented.")
 
+        fixed_inputs = kwargs.pop("fixed_inputs", {})
+        if fixed_inputs:
+            for key in fixed_inputs.keys():
+                if key not in self.inputs:
+                    raise ValueError("Unrecognized input {}".format(input))
+            transform = core.set_inputs(transform, fixed_inputs)
         with_units = kwargs.pop("with_units", False)
         if 'with_bounding_box' not in kwargs:
             kwargs['with_bounding_box'] = True
@@ -457,6 +470,9 @@ class WCS(GWCSAPIMixin):
         Return the range of acceptable values for each input axis.
         The order of the axes is `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
         """
+        if self._compound_bbox is not None:
+            return self._compound_bbox
+
         frames = self.available_frames
         transform_0 = self.get_transform(frames[0], frames[1])
         try:
@@ -486,24 +502,27 @@ class WCS(GWCSAPIMixin):
         value : tuple or None
             Tuple of tuples with ("low", high") values for the range.
         """
-        frames = self.available_frames
-        transform_0 = self.get_transform(frames[0], frames[1])
-        if value is None:
-            transform_0.bounding_box = value
+        if is_instance(value, dict):
+            self._compound_bbox = value
         else:
-            try:
-                # Make sure the dimensions of the new bbox are correct.
-                mutils._BoundingBox.validate(transform_0, value)
-            except:
-                raise
-            # get the sorted order of axes' indices
-            axes_ind = self._get_axes_indices()
-            if transform_0.n_inputs == 1:
+            frames = self.available_frames
+            transform_0 = self.get_transform(frames[0], frames[1])
+            if value is None:
                 transform_0.bounding_box = value
             else:
-                # The axes in bounding_box in modeling follow python order
-                transform_0.bounding_box = np.array(value)[axes_ind][::-1]
-        self.set_transform(frames[0], frames[1], transform_0)
+                try:
+                    # Make sure the dimensions of the new bbox are correct.
+                    mutils._BoundingBox.validate(transform_0, value)
+                except:
+                    raise
+                # get the sorted order of axes' indices
+                axes_ind = self._get_axes_indices()
+                if transform_0.n_inputs == 1:
+                    transform_0.bounding_box = value
+                else:
+                    # The axes in bounding_box in modeling follow python order
+                    transform_0.bounding_box = np.array(value)[axes_ind][::-1]
+            self.set_transform(frames[0], frames[1], transform_0)
 
     def _get_axes_indices(self):
         try:
