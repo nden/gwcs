@@ -4,6 +4,7 @@ import itertools
 import numpy as np
 from astropy.modeling.core import Model
 from astropy.modeling import utils as mutils
+from astropy.modeling import core
 
 from .api import GWCSAPIMixin
 from . import coordinate_frames
@@ -36,7 +37,7 @@ class WCS(GWCSAPIMixin):
     """
 
     def __init__(self, forward_transform=None, input_frame='detector',
-                 output_frame=None, name="", inputs=()):
+                 output_frame=None, name="", inputs=(), selector=()):
         #self.low_level_wcs = self
         self._available_frames = []
         self._pipeline = []
@@ -50,6 +51,10 @@ class WCS(GWCSAPIMixin):
                              #"number of inputs of the forward "
                              #"transforms {}".format(len(inputs), tr_inputs))
         self.inputs = inputs
+        if not self.inputs:
+            self.inputs = self.forward_transform.inputs
+
+        self.selector = selector
         self._compound_bbox = None
 
     def _initialize_wcs(self, forward_transform, input_frame, output_frame):
@@ -246,17 +251,23 @@ class WCS(GWCSAPIMixin):
             raise NotImplementedError("WCS.forward_transform is not implemented.")
 
         fixed_inputs = kwargs.pop("fixed_inputs", {})
+        print('fixed', fixed_inputs)
         if fixed_inputs:
             for key in fixed_inputs.keys():
-                if key not in self.inputs:
-                    raise ValueError("Unrecognized input {}".format(input))
+                if utils.isnumerical(key) and key > len(self.inputs):
+                    raise ValueError("")
+                elif isinstance(key, str) and key not in self.selector:
+                    raise ValueError("The inputs that can be fixed are {}".format(self.selector))
+            print('fixed', fixed_inputs)
             transform = core.set_inputs(transform, fixed_inputs)
+            bb = self.bounding_box[list(fixed_inputs.keys())[0]]
+            transform.bounding_box = bb
         with_units = kwargs.pop("with_units", False)
         if 'with_bounding_box' not in kwargs:
             kwargs['with_bounding_box'] = True
         if 'fill_value' not in kwargs:
             kwargs['fill_value'] = np.nan
-
+        """
         if self.bounding_box is not None:
             # Currently compound models do not attempt to combine individual model
             # bounding boxes. Get the forward transform and assign the ounding_box to it
@@ -266,6 +277,7 @@ class WCS(GWCSAPIMixin):
                 transform.bounding_box = np.array(self.bounding_box)[axes_ind][::-1]
             else:
                 transform.bounding_box = self.bounding_box
+        """
         result = transform(*args, **kwargs)
 
         if with_units:
@@ -502,7 +514,7 @@ class WCS(GWCSAPIMixin):
         value : tuple or None
             Tuple of tuples with ("low", high") values for the range.
         """
-        if is_instance(value, dict):
+        if isinstance(value, dict):
             self._compound_bbox = value
         else:
             frames = self.available_frames
@@ -613,3 +625,38 @@ class WCS(GWCSAPIMixin):
                 result = np.squeeze(result)
 
         return result.T
+
+
+    def set_inputs(self, **fixed):
+        """
+        Construct a new unique WCS by fixing inputs.
+
+        Parameters
+        ----------
+        fixed : dict
+            Keyword arguments with fixed values corresponding to `self.selector`.
+
+        Returns
+        -------
+        new_wcs : `WCS`
+            A new unique WCS corresponding to the values in `fixed`.
+
+        Examples
+        --------
+        >>> w = WCS(pipeline, selector=("spectral_order", inputs=("x", "y", "spectral_order"))
+        >>> new_wcs = w.set_inputs(spectral_order=2)
+        >>> new_wcs.inputs
+            ("x", "y")
+
+        """
+        keys = fixed.keys()
+        print('fixed', fixed)
+        new_pipeline = []
+        #for step in self.pipeline:
+            #transform = core.set_inputs(step[1], fixed)
+            #new_pipeline.append((step[0], transform))
+        new_pipeline.append((self.input_frame,
+                             core.set_inputs(self.forward_transform, fixed)))
+        new_pipeline.append((self.output_frame, None))
+        return self.__class__(new_pipeline)
+
