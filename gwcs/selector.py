@@ -127,11 +127,21 @@ class _LabelMapper(Model):
     name : str
         The name of this transform.
     """
-    def __init__(self, mapper, no_label, inputs_mapping=None, name=None, **kwargs):
+
+    def __init__(self, mapper, no_label, inputs_mapping=None, name=None,
+                 inputs=None, outputs=None, **kwargs):
         self._no_label = no_label
         self._inputs_mapping = inputs_mapping
         self._mapper = mapper
         super(_LabelMapper, self).__init__(name=name, **kwargs)
+        self._n_inputs = 2
+        self._n_outputs = 2
+        if inputs is not None:
+            self._n_inputs = len(inputs)
+            self.inputs = inputs
+        if outputs is not None:
+            self._n_outputs = len(outputs)
+            self.outputs = outputs
 
     @property
     def mapper(self):
@@ -174,8 +184,10 @@ class LabelMapperArray(_LabelMapper):
 
     """
 
-    inputs = ('x', 'y')
-    outputs = ('label',)
+    #inputs = ('x', 'y')
+    #outputs = ('label',)
+    n_inputs = 2
+    n_outputs = 1
 
     linear = False
     fittable = False
@@ -186,7 +198,8 @@ class LabelMapperArray(_LabelMapper):
             _no_label = 0
         else:
             _no_label = ""
-        super(LabelMapperArray, self).__init__(mapper, _no_label, name=name, **kwargs)
+        super().__init__(mapper, _no_label, name=name,
+                         inputs=("X", "y"), outputs=("label",), **kwargs)
 
     def evaluate(self, *args):
         args = tuple([_toindex(a) for a in args])
@@ -268,7 +281,7 @@ class LabelMapperDict(_LabelMapper):
         The name of this transform.
     """
     standard_broadcasting = False
-    outputs = ('labels',)
+    n_outputs = 1
 
     linear = False
     fittable = False
@@ -276,20 +289,19 @@ class LabelMapperDict(_LabelMapper):
     def __init__(self, inputs, mapper, inputs_mapping=None, atol=10**-8, name=None, **kwargs):
         self._atol = atol
         _no_label = 0
-        self._inputs = inputs
         if not all([m.n_outputs == 1 for m in mapper.values()]):
             raise TypeError("All transforms in mapper must have one output.")
-        self._input_units_strict = {key: False for key in self._inputs}
-        self._input_units_allow_dimensionless = {key: False for key in self._inputs}
         super(LabelMapperDict, self).__init__(mapper, _no_label, inputs_mapping,
-                                              name=name, **kwargs)
+                                              name=name, inputs=inputs, outputs=("labels", ), **kwargs)
+        self._input_units_strict = {key: False for key in self.inputs}
+        self._input_units_allow_dimensionless = {key: False for key in self.inputs}
 
-    @property
-    def inputs(self):
-        """
-        The name(s) of the input variable(s) on which a model is evaluated.
-        """
-        return self._inputs
+    #@property
+    #def inputs(self):
+        #"""
+        #The name(s) of the input variable(s) on which a model is evaluated.
+        #"""
+        #return self._inputs
 
     @property
     def atol(self):
@@ -352,7 +364,7 @@ class LabelMapperRange(_LabelMapper):
         The name of this transform.
     """
     standard_broadcasting = False
-    outputs = ('labels',)
+    #outputs = ('labels',)
 
     linear = False
     fittable = False
@@ -360,21 +372,21 @@ class LabelMapperRange(_LabelMapper):
     def __init__(self, inputs, mapper, inputs_mapping=None, name=None, **kwargs):
         if self._has_overlapping(np.array(list(mapper.keys()))):
             raise ValueError("Overlapping ranges of values are not supported.")
-        self._inputs = inputs
+        #self._inputs = inputs
         _no_label = 0
         if not all([m.n_outputs == 1 for m in mapper.values()]):
             raise TypeError("All transforms in mapper must have one output.")
-        self._input_units_strict = {key: False for key in self._inputs}
-        self._input_units_allow_dimensionless = {key: False for key in self._inputs}
         super(LabelMapperRange, self).__init__(mapper, _no_label, inputs_mapping,
-                                               name=name, **kwargs)
+                                               name=name, inputs=inputs, outputs=("labels",), **kwargs)
+        self._input_units_allow_dimensionless = {key: False for key in self.inputs}
+        self._input_units_strict = {key: False for key in self.inputs}
 
-    @property
-    def inputs(self):
-        """
-        The name(s) of the input variable(s) on which a model is evaluated.
-        """
-        return self._inputs
+    #@property
+    #def inputs(self):
+        #"""
+        #The name(s) of the input variable(s) on which a model is evaluated.
+        #"""
+        #return self._inputs
 
     @staticmethod
     def _has_overlapping(ranges):
@@ -489,17 +501,19 @@ class RegionsSelector(Model):
 
     def __init__(self, inputs, outputs, selector, label_mapper, undefined_transform_value=np.nan,
                  name=None, **kwargs):
-        self._inputs = inputs
-        self._outputs = outputs
+        self._n_inputs = len(inputs)
+        self._n_outputs = len(outputs)
         self.label_mapper = label_mapper
         self._undefined_transform_value = undefined_transform_value
         self._selector = selector  # copy.deepcopy(selector)
 
         if " " in selector.keys() or 0 in selector.keys():
             raise ValueError('"0" and " " are not allowed as keys.')
-        self._input_units_strict = {key: False for key in self._inputs}
-        self._input_units_allow_dimensionless = {key: False for key in self._inputs}
         super(RegionsSelector, self).__init__(n_models=1, name=name, **kwargs)
+        self.inputs = inputs
+        self.outputs = outputs
+        #self._input_units_strict = {key: False for key in self.inputs}
+        #self._input_units_allow_dimensionless = {key: False for key in self.inputs}
 
     def set_input(self, rid):
         """
@@ -571,21 +585,21 @@ class RegionsSelector(Model):
     def undefined_transform_value(self, value):
         self._undefined_transform_value = value
 
-    @property
-    def outputs(self):
-        """The name(s) of the output(s) of the model."""
-        return self._outputs
+    #@property
+    #def outputs(self):
+    #    """The name(s) of the output(s) of the model."""
+    #    return self._outputs
 
     @property
     def selector(self):
         return self._selector
 
-    @property
-    def inputs(self):
-        """
-        The name(s) of the input variable(s) on which a model is evaluated.
-        """
-        return self._inputs
+    #@property
+    #def inputs(self):
+    #    """
+    #    The name(s) of the input variable(s) on which a model is evaluated.
+    #    """
+    #    return self._inputs
 
 
 class LabelMapper(_LabelMapper):
@@ -610,29 +624,31 @@ class LabelMapper(_LabelMapper):
         The name of this transform.
     """
 
-    outputs = ('label',)
+    #outputs = ('label',)
 
     def __init__(self, inputs, mapper, no_label=np.nan, inputs_mapping=None, name=None, **kwargs):
-        self._no_label = no_label
-        self._inputs = inputs
-        self.outputs = tuple(['x{0}'.format(ind) for ind in list(range(mapper.n_outputs))])
+        #self._no_label = no_label
+        #self._inputs = inputs
+        #self.
+        outputs = tuple(['x{0}'.format(ind) for ind in list(range(mapper.n_outputs))])
         if isinstance(inputs_mapping, tuple):
             inputs_mapping = astmodels.Mapping(inputs_mapping)
         elif inputs_mapping is not None and not isinstance(inputs_mapping, astmodels.Mapping):
             raise TypeError("inputs_mapping must be an instance of astropy.modeling.Mapping.")
 
-        self._inputs_mapping = inputs_mapping
-        self._mapper = mapper
-        self._input_units_strict = {key: False for key in self._inputs}
-        self._input_units_allow_dimensionless = {key: False for key in self._inputs}
-        super(_LabelMapper, self).__init__(name=name, **kwargs)
+            #self._inputs_mapping = inputs_mapping
+        #self._mapper = mapper
+        super().__init__(mapper=mapper, no_label=no_label, inputs_mapping=inputs_mapping, name=name,
+                         inputs=inputs, outputs=outputs, **kwargs)
+        #self._input_units_strict = {key: False for key in self.inputs}
+        #self._input_units_allow_dimensionless = {key: False for key in self.inputs}
 
-    @property
-    def inputs(self):
-        """
-        The name(s) of the input variable(s) on which a model is evaluated.
-        """
-        return self._inputs
+    #@property
+    #def inputs(self):
+    #    """
+    #    The name(s) of the input variable(s) on which a model is evaluated.
+    #    """
+    #    return self._inputs
 
     @property
     def mapper(self):

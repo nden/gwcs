@@ -2,7 +2,7 @@
 import functools
 import itertools
 import numpy as np
-from astropy.modeling.core import Model
+from astropy.modeling.core import Model, fix_inputs
 from astropy.modeling import utils as mutils
 from astropy.modeling import core
 
@@ -37,7 +37,7 @@ class WCS(GWCSAPIMixin):
     """
 
     def __init__(self, forward_transform=None, input_frame='detector',
-                 output_frame=None, name="", inputs=(), selector=()):
+                 output_frame=None, name="", selector=()):
         #self.low_level_wcs = self
         self._available_frames = []
         self._pipeline = []
@@ -45,14 +45,6 @@ class WCS(GWCSAPIMixin):
         self._array_shape = None
         self._initialize_wcs(forward_transform, input_frame, output_frame)
         self._pixel_shape = None
-        tr_inputs = len(self.forward_transform.inputs)
-        #if len(inputs) != tr_inputs:
-            #raise ValueError("The number of inputs {} does not match the "
-                             #"number of inputs of the forward "
-                             #"transforms {}".format(len(inputs), tr_inputs))
-        self.inputs = inputs
-        if not self.inputs:
-            self.inputs = self.forward_transform.inputs
 
         self.selector = selector
         self._compound_bbox = None
@@ -92,6 +84,10 @@ class WCS(GWCSAPIMixin):
             super(WCS, self).__setattr__(_output_frame, outp_frame_obj)
             self._pipeline = [(_input_frame, None),
                               (_output_frame, None)]
+
+    @property
+    def inputs(self):
+        return self.forward_transform.inputs
 
     def get_transform(self, from_frame, to_frame):
         """
@@ -251,17 +247,17 @@ class WCS(GWCSAPIMixin):
             raise NotImplementedError("WCS.forward_transform is not implemented.")
 
         fixed_inputs = kwargs.pop("fixed_inputs", {})
-        print('fixed', fixed_inputs)
+        #print('fixed', fixed_inputs)
         if fixed_inputs:
-            for key in fixed_inputs.keys():
-                if utils.isnumerical(key) and key > len(self.inputs):
-                    raise ValueError("")
-                elif isinstance(key, str) and key not in self.selector:
-                    raise ValueError("The inputs that can be fixed are {}".format(self.selector))
-            print('fixed', fixed_inputs)
-            transform = core.set_inputs(transform, fixed_inputs)
-            bb = self.bounding_box[list(fixed_inputs.keys())[0]]
-            transform.bounding_box = bb
+            #for key in fixed_inputs.keys():
+                #if utils.isnumerical(key) and key > len(self.inputs):
+                    #raise ValueError("")
+                #elif isinstance(key, str) and key not in self.selector:
+                    #raise ValueError("The inputs that can be fixed are {}".format(self.selector))
+            #print('fixed', fixed_inputs)
+            transform = core.fix_inputs(transform, fixed_inputs)
+            #bb = self.bounding_box[list(fixed_inputs.keys())[0]]
+            #transform.bounding_box = bb
         with_units = kwargs.pop("with_units", False)
         if 'with_bounding_box' not in kwargs:
             kwargs['with_bounding_box'] = True
@@ -627,9 +623,9 @@ class WCS(GWCSAPIMixin):
         return result.T
 
 
-    def set_inputs(self, **fixed):
+    def fix_inputs(self, fixed):
         """
-        Construct a new unique WCS by fixing inputs.
+        Return a new unique WCS by fixing inputs to constant values.
 
         Parameters
         ----------
@@ -650,13 +646,9 @@ class WCS(GWCSAPIMixin):
 
         """
         keys = fixed.keys()
-        print('fixed', fixed)
         new_pipeline = []
-        #for step in self.pipeline:
-            #transform = core.set_inputs(step[1], fixed)
-            #new_pipeline.append((step[0], transform))
-        new_pipeline.append((self.input_frame,
-                             core.set_inputs(self.forward_transform, fixed)))
-        new_pipeline.append((self.output_frame, None))
+        step0 = self.pipeline[0]
+        new_transform = fix_inputs(step0[1], fixed)
+        new_pipeline.append((step0[0], new_transform))
+        new_pipeline.extend(self.pipeline[1:])
         return self.__class__(new_pipeline)
-
