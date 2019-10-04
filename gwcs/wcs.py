@@ -38,13 +38,17 @@ class WCS(GWCSAPIMixin):
         A coordinates object or a string name.
     output_frame : str, `~gwcs.coordinate_frames.CoordinateFrame`
         A coordinates object or a string name.
+    selector : dict
+        A selector for a compound WCS object.
+        Keys are names of inputs to the forward transform.
+        Values are an enumeration of the valid values for the keys.
     name : str
         a name for this WCS
 
     """
 
     def __init__(self, forward_transform=None, input_frame='detector', output_frame=None,
-                 name=""):
+                 selector=None, name=""):
         #self.low_level_wcs = self
         self._available_frames = []
         self._pipeline = []
@@ -52,6 +56,8 @@ class WCS(GWCSAPIMixin):
         self._array_shape = None
         self._initialize_wcs(forward_transform, input_frame, output_frame)
         self._pixel_shape = None
+        self._selector = _validate_selector(selector)
+        self._compound_bbox = {}
 
     def _initialize_wcs(self, forward_transform, input_frame, output_frame):
         if forward_transform is not None:
@@ -221,6 +227,29 @@ class WCS(GWCSAPIMixin):
             name = frame.name
             frame_obj = frame
         return name, frame_obj
+
+    @property
+    def inputs(self):
+        if self._pipeline:
+            return self._pipeline[0][1].inputs
+        return ()
+
+    @property
+    def outputs(self):
+        if self._pipeline:
+            return self._pipeline[-2][1].outputs
+        return ()
+
+    @property
+    def selector(self):
+        return self._selector
+
+    def _validate_selector(self, selector):
+        if self.inputs:
+            if not all([k in self.inputs for k in selector.keys()]):
+                raise ValueError(f"The keys in the selector dictionary {selector.keys()}) "
+                                 "do not match the inputs {self.inputs}.")
+        return selector
 
     def __call__(self, *args, **kwargs):
         """
@@ -465,6 +494,17 @@ class WCS(GWCSAPIMixin):
         Return the range of acceptable values for each input axis.
         The order of the axes is `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
         """
+        if self.selector is not None:
+            if self._compound_bbox:
+                return self._compound_bbox
+            else:
+                bbox = self._get_single_wcs_bbox()
+                if bbox is not None:
+                    warnings.Warning("A single bounding_box detected for a compound WCS.")
+        else:
+            return self._get_single_wcs_bbox()
+
+    def _get_single_wcs_bbox(self):
         frames = self.available_frames
         transform_0 = self.get_transform(frames[0], frames[1])
         try:
@@ -494,24 +534,28 @@ class WCS(GWCSAPIMixin):
         value : tuple or None
             Tuple of tuples with ("low", high") values for the range.
         """
-        frames = self.available_frames
-        transform_0 = self.get_transform(frames[0], frames[1])
-        if value is None:
-            transform_0.bounding_box = value
-        else:
-            try:
-                # Make sure the dimensions of the new bbox are correct.
-                mutils._BoundingBox.validate(transform_0, value)
-            except:
-                raise
-            # get the sorted order of axes' indices
-            axes_ind = self._get_axes_indices()
-            if transform_0.n_inputs == 1:
+        if isinstance(value, dict) and self.selector is not None:
+            # Setting a compound bounding_box
+            self._compound_bbox = value
+        elif isinstance(value, tuple):
+            frames = self.available_frames
+            transform_0 = self.get_transform(frames[0], frames[1])
+            if value is None:
                 transform_0.bounding_box = value
             else:
-                # The axes in bounding_box in modeling follow python order
-                transform_0.bounding_box = np.array(value)[axes_ind][::-1]
-        self.set_transform(frames[0], frames[1], transform_0)
+                try:
+                    # Make sure the dimensions of the new bbox are correct.
+                    mutils._BoundingBox.validate(transform_0, value)
+                except:
+                    raise
+                # get the sorted order of axes' indices
+                axes_ind = self._get_axes_indices()
+                if transform_0.n_inputs == 1:
+                    transform_0.bounding_box = value
+                else:
+                    # The axes in bounding_box in modeling follow python order
+                    transform_0.bounding_box = np.array(value)[axes_ind][::-1]
+            self.set_transform(frames[0], frames[1], transform_0)
 
     def _get_axes_indices(self):
         try:
