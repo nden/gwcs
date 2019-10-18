@@ -56,8 +56,30 @@ class WCS(GWCSAPIMixin):
         self._array_shape = None
         self._initialize_wcs(forward_transform, input_frame, output_frame)
         self._pixel_shape = None
-        self._selector = _validate_selector(selector)
+        self._selector = self._validate_selector(selector)
+        self._selector2inputs_map = self._selector_map()
         self._compound_bbox = {}
+
+    def _selector_map(self):
+        if self._selector is None:
+            return {}
+        keys = list(self.selector.keys())
+        smap = {}
+        def keyind(key):
+            if isinstance(key, int):
+                return key
+            elif isinstance(key, str):
+                return list(self.inputs).index(key)
+
+        for key in keys:
+            if isinstance(key, tuple):
+                val = ()
+                for k in key:
+                    val += keyind(k)
+                smap[key] = val
+            else:
+                smap[key] = keyind(key)
+        return smap
 
     def _initialize_wcs(self, forward_transform, input_frame, output_frame):
         if forward_transform is not None:
@@ -230,7 +252,7 @@ class WCS(GWCSAPIMixin):
 
     @property
     def inputs(self):
-        if self._pipeline:
+        if self.forward_transform:
             return self._pipeline[0][1].inputs
         return ()
 
@@ -245,7 +267,7 @@ class WCS(GWCSAPIMixin):
         return self._selector
 
     def _validate_selector(self, selector):
-        if self.inputs:
+        if self.inputs and selector is not None:
             if not all([k in self.inputs for k in selector.keys()]):
                 raise ValueError(f"The keys in the selector dictionary {selector.keys()}) "
                                  "do not match the inputs {self.inputs}.")
@@ -276,10 +298,37 @@ class WCS(GWCSAPIMixin):
             raise NotImplementedError("WCS.forward_transform is not implemented.")
 
         with_units = kwargs.pop("with_units", False)
-        if 'with_bounding_box' not in kwargs:
-            kwargs['with_bounding_box'] = True
-        if 'fill_value' not in kwargs:
-            kwargs['fill_value'] = np.nan
+        #if 'with_bounding_box' not in kwargs:
+        #    kwargs['with_bounding_box'] = True
+        #if 'fill_value' not in kwargs:
+        #    kwargs['fill_value'] = np.nan
+
+        kw = {}
+        kw['with_bounding_box'] = kwargs.pop('with_bounding_box', True)
+        kw['fill_value'] = kwargs.pop('fill_value', np.nan)
+
+        if self.selector is not None:
+            if not kwargs:
+                # all inputs are passed as positional arguments
+                for key in self.selector.keys():
+                    inputs_ind = self._selector2inputs_map[key]
+                    if args[inputs_ind] not in self.selector[key]:
+                        raise ValueError(f"The value of input {args[inputs_ind]} is not valid.")
+            elif not args:
+                # all inputs were passed as keyword arguments
+                for key in self.selector.keys():
+                    if kwargs[key] not in self.selector[key]:
+                        raise ValueError(f"The value of input {key} is not valid.")
+            else:
+                # Some were passed as positional some as keyword args
+                inp = dict(zip(self.inputs[:len(args)], args))
+                for key in self.selector.keys():
+                    if kwargs[key] not in self.selector[key]:
+                        raise ValueError(f"The value of input {key} is not valid.")
+        kwargs.update(kw)
+
+
+
 
         if self.bounding_box is not None:
             # Currently compound models do not attempt to combine individual model
@@ -675,6 +724,8 @@ class WCS(GWCSAPIMixin):
         new_pipeline = []
         step0 = self.pipeline[0]
         new_transform = fix_inputs(step0[1], fixed)
+        if isinstance(self.bounding_box, dict) and fixed.keys() in self.bounding_box:
+            new_transform.bounding_box = self.bounding_box[kixed.keys()]
         new_pipeline.append((step0[0], new_transform))
         new_pipeline.extend(self.pipeline[1:])
         return self.__class__(new_pipeline)
