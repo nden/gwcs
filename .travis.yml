@@ -46,7 +46,7 @@ matrix:
         - python: 3.6
           env:
             - PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT .[test] coveralls pytest-cov"
-	    - TEST_COMMAND='pytest --cov-config=gwcs/tests/coveragerc --cov=gwcs'
+            - TEST_COMMAND='pytest --cov-config=gwcs/tests/coveragerc --cov=gwcs'
 
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
