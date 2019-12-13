@@ -47,18 +47,3 @@ def test_wavelength_grating_equation_units():
 
     result = model(-u.Quantity(alpha_in), -u.Quantity(alpha_in))
     assert_allclose(result, wave)
-
-
-@pytest.mark.parametrize(('wavelength', 'n'),
-                         [(1e-6, 1.43079543),
-                          (2e-6,  1.42575377),
-                          (5e-6, 1.40061966)
-                          ])
-def test_SellmeierGlass(wavelength, n):
-    """ Test from Nirspec team."""
-    #wavelength = wavelength*10**6
-    B_coef =  [0.58339748, 0.46085267, 3.8915394]
-    C_coef = [0.00252643, 0.010078333, 1200.556]
-    model = sp.SellmeierGlass(B_coef, C_coef)
-    n_result = model(wavelength)
-    assert_allclose(n_result, n)
