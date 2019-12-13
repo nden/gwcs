@@ -59,10 +59,8 @@ DOCS_REQUIRE = [
 TESTS_REQUIRE = [
     'pytest',
     'pytest-doctestplus',
-    'pytest-astropy',
+    'pytest-astropy<=0.7',
     'scipy',
-    'hypothesis',
-    'attrs>=19.2'
 ]
 
 setup(name=PACKAGENAME,
