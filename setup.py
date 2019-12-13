@@ -43,8 +43,8 @@ def get_package_data():
 schemas = get_package_data()
 PACKAGE_DATA ={'gwcs':schemas}
 
-entry_points = {'asdf_extensions': 'gwcs = gwcs.extension:GWCSExtension',}
-#'bandit.formatters': 'bson = bandit_bson:formatter'}
+entry_points = {'asdf_extensions': 'gwcs = gwcs.extension:GWCSExtension',
+                'bandit.formatters': 'bson = bandit_bson:formatter'}
 
 DOCS_REQUIRE = [
     #'matplotlib',
