@@ -59,7 +59,7 @@ DOCS_REQUIRE = [
 TESTS_REQUIRE = [
     'pytest',
     'pytest-doctestplus',
-    #'pytest-astropy<=0.7',
+    'pytest-astropy',
     'scipy',
 ]
 
