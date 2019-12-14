@@ -68,7 +68,7 @@ setup(name=PACKAGENAME,
       setup_requires=['setuptools_scm'],
       description=DESCRIPTION,
       requires=['attrs (>=0.19.2)', 'astropy', 'asdf'],
-      install_requires=['astropy', 'numpy', 'asdf'],
+      install_requires=['attrs (>=0.19.2)', 'astropy', 'numpy', 'asdf'],
       packages=find_packages(),
       extras_require={
         'test': TESTS_REQUIRE,
