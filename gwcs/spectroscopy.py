@@ -13,6 +13,9 @@ __all__ = ['ToDirectionCosines', 'FromDirectionCosines',
            'WavelengthFromGratingEquation', 'AnglesFromGratingEquation3D']
 
 
+__doctest_skip__ = ['AnglesFromGratingEquation3D', 'WavelengthFromGratingEquation']
+
+
 class ToDirectionCosines(Model):
     """
     Transform a vector to direction cosines.
