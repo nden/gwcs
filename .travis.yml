@@ -45,20 +45,20 @@ matrix:
         # Do a coverage test.
         - python: 3.6
           env:
-            - PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT pytest pytest-docutils scipy coveralls pytest-cov"
+            - PIP_DEPENDENCIES=".[test] coveralls pytest-cov"
             - TEST_COMMAND='pytest --cov-config=gwcs/tests/coveragerc --cov=gwcs'
 
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
         - python: 3.7
           env:
-            - PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT .[docs]"
+            - PIP_DEPENDENCIES=".[docs]"
             - TEST_COMMAND="make --directory=docs html"
 
         - python: 3.6
           env:
             - NUMPY_VERSION=1.17
-            - PIP_DEPENDENCIES='$ASTROPY_GIT $ASDF_GIT .[test]'
+            - PIP_DEPENDENCIES='.[test]'
             - TEST_COMMAND="pytest"
 
         - python: 3.7
