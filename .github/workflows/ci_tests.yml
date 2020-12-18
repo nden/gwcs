@@ -77,15 +77,4 @@ jobs:
       uses: codecov/codecov-action@v1.0.13
       with:
         file: ./coverage.xml
-© 2020 GitHub, Inc.
-Terms
-Privacy
-Security
-Status
-Help
-Contact GitHub
-Pricing
-API
-Training
-Blog
-About
+	
