@@ -1,18 +1,12 @@
 .. 
    GWCS - Generalized World Coordinate System
    ==========================================
+![CI](https://github.com/spacetelescope/gwcs/workflows/CI/badge.svg)
+[![codecov](https://codecov.io/gh/spacetelescope/gwcs/branch/master/graph/badge.svg?token=Utf5Zs9g7z)](https://codecov.io/gh/spacetelescope/gwcs)
+[![Documentation Status](https://readthedocs.org/projects/gwcs/badge/?version=latest)](http://gwcs.readthedocs.io/en/latest/?badge=latest)
+[![Powered by STScI Badge](https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat)](http://www.stsci.edu)
+[![Powered by Astropy Badge](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
 
-.. raw:: html
-
-   <h1 align="center">GWCS - Generalized World Coordinate System </h1>
-   <p align="center">
-     <a href='https://gwcs.readthedocs.io/en/latest/?badge=latest'><img src='https://readthedocs.org/projects/gwcs/badge/?version=latest' alt='Documentation Status'></a>
-     <a href='https://github.com/spacetelescope/gwcs/workflows/CI/badge'><img src='https://github.com/spacetelescope/gwcs/workflows/CI/badge.svg' alt='CI Status'></a>
-     <a href="https://coveralls.io/github/spacetelescope/gwcs?branch=master"><img src="https://coveralls.io/repos/github/spacetelescope/gwcs/badge.svg?branch=master" alt="Coverage Status"></a>
-     <img src="https://img.shields.io/pypi/l/gwcs.svg" alt="license">
-     <a href="http://www.stsci.edu"><img src="https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat" alt="stsci"></a>
-     <a href="http://www.astropy.org/"><img src="http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat" alt="astropy"></a>
-   </p>
 
 
 Generalized World Coordinate System (GWCS) is an `Astropy`_ affiliated package providing tools for managing the World Coordinate System of astronomical data.
